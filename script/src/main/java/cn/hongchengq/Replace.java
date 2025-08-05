@@ -4,9 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
+
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.*;
@@ -15,7 +14,7 @@ import java.util.regex.Pattern;
 // todo 替换后在行尾添加一条注释 内容为混淆字段->解混淆
 @Slf4j
 public class Replace {
-    public static void main(String[] args) {
+    public static void replace() {
         String tsvFilePath = Config.getConfig().mappingFilePath;
 
         // 用于存储混淆字段到解混淆字段的映射
@@ -31,7 +30,7 @@ public class Replace {
         ) {
             // 遍历TSV文件中的每一行
             for (CSVRecord record : csvParser) {
-//                System.out.println("debug:\n" + record);
+                log.debug(String.valueOf(record));
                 try {
                     String obfuscated = record.get(0);
                     String deobfuscated = record.get(1);
@@ -69,7 +68,7 @@ public class Replace {
                 } else if (consistentDuplicates.contains(obfuscated)) {
                     // 重复但映射一致的字段也使用
                     validMapping.put(obfuscated, mapping.get(obfuscated));
-                    log.info("混淆字段 '{}' 重复出现但映射一致，将进行替换", obfuscated);
+                    log.debug("混淆字段 '{}' 重复出现但映射一致，将进行替换", obfuscated);
                 } else {
                     // 重复且映射不一致的字段不使用
                     log.warn("警告: 混淆字段 '{}' 出现了 {} 次且映射不一致，将不进行替换", obfuscated, occurrence);
@@ -78,11 +77,11 @@ public class Replace {
 
             // 对validMapping中的key进行处理，如果包含空格则删除
             Map<String, String> processedMapping = new HashMap<>();
+
             for (Map.Entry<String, String> entry : validMapping.entrySet()) {
                 String obfuscated = entry.getKey();
                 String deobfuscated = entry.getValue();
 
-                // 如果key包含空格，则删除空格
                 if (obfuscated.contains(" ")) {
                     String cleanedObfuscated = obfuscated.replace(" ", "");
                     processedMapping.put(cleanedObfuscated, deobfuscated);
@@ -92,41 +91,41 @@ public class Replace {
                 }
             }
 
+            // 构建一个包含所有混淆字段的复合正则表达式
+            StringBuilder patternBuilder = new StringBuilder();
+            patternBuilder.append("\\b(");
+            List<String> obfuscatedKeys = new ArrayList<>(processedMapping.keySet());
+            for (int i = 0; i < obfuscatedKeys.size(); i++) {
+                if (i > 0) {
+                    patternBuilder.append("|");
+                }
+                patternBuilder.append(Pattern.quote(obfuscatedKeys.get(i)));
+            }
+            patternBuilder.append(")\\b");
+
+            Pattern combinedPattern = Pattern.compile(patternBuilder.toString());
+
             // 获取proto文件路径
             String protoFilePath = Config.getConfig().inputProtoFilePath;
             String outputFilePath = protoFilePath.replace(".proto", "_deobfuscated.proto");
 
-            try {
-                // 读取proto文件
-                List<String> lines = Files.readAllLines(Paths.get(protoFilePath));
+            try (BufferedReader bufferedReader = Files.newBufferedReader(Paths.get(protoFilePath));
+                 BufferedWriter bufferedWriter = Files.newBufferedWriter(Paths.get(outputFilePath))) {
 
-                // 创建输出文件
-                List<String> outputLines = new ArrayList<>();
-
-                // 逐行处理proto文件
-                for (String line : lines) {
-                    String processedLine = line;
-
-                    // 对每一行检查是否包含混淆字段并进行替换
-                    for (Map.Entry<String, String> entry : processedMapping.entrySet()) {
-                        String obfuscated = entry.getKey();
-                        String deobfuscated = entry.getValue();
-
-                        // 使用正则表达式匹配整个单词，避免部分匹配
-                        processedLine = processedLine.replaceAll("\\b" + Pattern.quote(obfuscated) + "\\b", deobfuscated);
-                    }
-
-                    outputLines.add(processedLine);
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    String processedLine = combinedPattern.matcher(line).replaceAll(match -> {
+                        String matchedKey = match.group(1);
+                        return processedMapping.getOrDefault(matchedKey, matchedKey);
+                    });
+                    bufferedWriter.write(processedLine);
+                    bufferedWriter.newLine();
                 }
 
-                // 写入输出文件
-                Files.write(Paths.get(outputFilePath), outputLines);
                 log.info("解混淆完成，输出文件: {}", outputFilePath);
-
             } catch (IOException e) {
                 log.error("处理proto文件时出错:", e);
             }
-
 
         } catch (IOException e) {
             log.error(String.valueOf(e));
