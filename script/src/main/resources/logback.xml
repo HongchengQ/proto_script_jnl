@@ -7,7 +7,7 @@
     <contextName>logback</contextName>
 
     <logger name="cn.banxia" level="debug"/>
-    <property name="path" value="logs/dispatch"/>
+    <property name="path" value="logs/proto_script_jnl"/>
     <property name="maxHistory" value="30"/>
     <property name="maxFileSize" value="50MB"/>
     
@@ -25,12 +25,12 @@
     </appender>
 
     <appender name="debug_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${path}/dispatch_debug.log</file>
+        <file>${path}/proto_script_jnl_debug.log</file>
 
         <!-- 新版滚动策略 -->
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <!-- 文件命名格式及压缩 -->
-            <fileNamePattern>${path}/dispatch_debug.log.%d{yyyy-MM-dd}-%i.zip</fileNamePattern>
+            <fileNamePattern>${path}/proto_script_jnl_debug.log.%d{yyyy-MM-dd}-%i.zip</fileNamePattern>
             <!-- 单个文件最大大小 -->
             <maxFileSize>${maxFileSize}</maxFileSize>
             <!-- 保留历史天数 -->
