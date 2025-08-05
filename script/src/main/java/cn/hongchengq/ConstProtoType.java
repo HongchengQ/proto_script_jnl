@@ -3,7 +3,7 @@ package cn.hongchengq;
 import java.util.Arrays;
 import java.util.List;
 
-public class protoConstType {
+public class ConstProtoType {
     static final String messageType = "message";
     static final String enumType = "enum";
     static final String repeatedType = "repeated";
