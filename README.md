@@ -1,3 +1,4 @@
 # proto_script_jnl
 
-test
+编译: `mvn package`
+
