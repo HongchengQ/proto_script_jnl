@@ -1,5 +1,6 @@
 package cn.hongchengq;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -12,6 +13,7 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 // todo 替换后在行尾添加一条注释 内容为混淆字段->解混淆
+@Slf4j
 public class Replace {
     public static void main(String[] args) {
         String tsvFilePath = Config.getConfig().mappingFilePath;
@@ -50,7 +52,7 @@ public class Replace {
                     count.put(obfuscated, count.getOrDefault(obfuscated, 0) + 1);
 
                 } catch (Exception e) {
-                    System.out.println("读取到非正常recordNumber" + record.getRecordNumber());
+                    log.error("读取到非正常recordNumber: {}", record.getRecordNumber(), e);
                 }
             }
 
@@ -67,10 +69,10 @@ public class Replace {
                 } else if (consistentDuplicates.contains(obfuscated)) {
                     // 重复但映射一致的字段也使用
                     validMapping.put(obfuscated, mapping.get(obfuscated));
-                    System.out.println("信息: 混淆字段 '" + obfuscated + "' 重复出现但映射一致，将进行替换");
+                    log.info("混淆字段 '{}' 重复出现但映射一致，将进行替换", obfuscated);
                 } else {
                     // 重复且映射不一致的字段不使用
-                    System.out.println("警告: 混淆字段 '" + obfuscated + "' 出现了 " + occurrence + " 次且映射不一致，将不进行替换");
+                    log.warn("警告: 混淆字段 '{}' 出现了 {} 次且映射不一致，将不进行替换", obfuscated, occurrence);
                 }
             }
 
@@ -84,7 +86,7 @@ public class Replace {
                 if (obfuscated.contains(" ")) {
                     String cleanedObfuscated = obfuscated.replace(" ", "");
                     processedMapping.put(cleanedObfuscated, deobfuscated);
-                    System.out.println("信息: 清理了混淆字段 '" + obfuscated + "' 中的空格，清理后为 '" + cleanedObfuscated + "'");
+                    log.info("清理了混淆字段 '{}' 中的空格，清理后为 '{}'", obfuscated, cleanedObfuscated);
                 } else {
                     processedMapping.put(obfuscated, deobfuscated);
                 }
@@ -119,16 +121,15 @@ public class Replace {
 
                 // 写入输出文件
                 Files.write(Paths.get(outputFilePath), outputLines);
-                System.out.println("解混淆完成，输出文件: " + outputFilePath);
+                log.info("解混淆完成，输出文件: {}", outputFilePath);
 
             } catch (IOException e) {
-                System.err.println("处理proto文件时出错: " + e.getMessage());
-                e.printStackTrace();
+                log.error("处理proto文件时出错:", e);
             }
 
 
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error(String.valueOf(e));
         }
     }
 }

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--https://www.cnblogs.com/zuidongfeng/p/9135864.html-->
+<configuration debug="false">
+<!--    <include resource="org/springframework/boot/logging/logback/base.xml"/>-->
+    <!--<include resource="org/springframework/boot/logging/logback/console-appender.xml"/>-->
+
+    <contextName>logback</contextName>
+
+    <logger name="cn.banxia" level="debug"/>
+    <property name="path" value="logs/dispatch"/>
+    <property name="maxHistory" value="30"/>
+    <property name="maxFileSize" value="50MB"/>
+    
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>debug</level>
+        </filter>
+        <encoder>
+            <pattern>
+                <!--  在控制台中输出的格式和染色  -->
+                %d{yyyy-MM-dd HH:mm:ss.SS} %highlight(%-5level) %magenta([%thread]) %logger{100}.%M | %msg%n
+            </pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="debug_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${path}/dispatch_debug.log</file>
+
+        <!-- 新版滚动策略 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 文件命名格式及压缩 -->
+            <fileNamePattern>${path}/dispatch_debug.log.%d{yyyy-MM-dd}-%i.zip</fileNamePattern>
+            <!-- 单个文件最大大小 -->
+            <maxFileSize>${maxFileSize}</maxFileSize>
+            <!-- 保留历史天数 -->
+            <maxHistory>${maxHistory}</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <!--  输出的格式  -->
+            <pattern>%date %level [%thread] %logger{100} [%file : %line] %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>DEBUG</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+
+    <appender name="info_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${path}/proto_script_jnl_info.log</file>
+
+        <!-- 新版滚动策略 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 文件命名格式及压缩 -->
+            <fileNamePattern>${path}/proto_script_jnl_info.log.%d{yyyy-MM-dd}-%i.zip</fileNamePattern>
+            <!-- 单个文件最大大小 -->
+            <maxFileSize>${maxFileSize}</maxFileSize>
+            <!-- 保留历史天数 -->
+            <maxHistory>${maxHistory}</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%date %level [%thread] %logger{100} [%file : %line] %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>INFO</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+
+    <appender name="warn_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${path}/proto_script_jnl_warn.log</file>
+
+        <!-- 新版滚动策略 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 文件命名格式及压缩 -->
+            <fileNamePattern>${path}/proto_script_jnl_warn.log.%d{yyyy-MM-dd}-%i.zip</fileNamePattern>
+            <!-- 单个文件最大大小 -->
+            <maxFileSize>${maxFileSize}</maxFileSize>
+            <!-- 保留历史天数 -->
+            <maxHistory>${maxHistory}</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%date %level [%thread] %logger{100} [%file : %line] %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>WARN</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+
+
+    <appender name="error_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${path}/proto_script_jnl_error.log</file>
+
+        <!-- 新版滚动策略 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- 文件命名格式及压缩 -->
+            <fileNamePattern>${path}/proto_script_jnl_error.log.%d{yyyy-MM-dd}-%i.zip</fileNamePattern>
+            <!-- 单个文件最大大小 -->
+            <maxFileSize>${maxFileSize}</maxFileSize>
+            <!-- 保留历史天数 -->
+            <maxHistory>${maxHistory}</maxHistory>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>%date %level [%thread] %logger{100} [%file : %line] %msg%n</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+    </appender>
+
+    <root level="info">
+        <appender-ref ref="console"/>
+        <appender-ref ref="debug_file"/>
+        <appender-ref ref="info_file"/>
+        <appender-ref ref="warn_file"/>
+        <appender-ref ref="error_file"/>
+    </root>
+
+</configuration>
