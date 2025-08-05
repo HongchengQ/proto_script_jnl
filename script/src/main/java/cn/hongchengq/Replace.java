@@ -90,9 +90,10 @@ public class Replace {
                 }
             }
 
-            // 构建一个包含所有混淆字段的复合正则表达式
+            // 构建一个包含所有混淆字段的复合正则表达式（不使用单词边界）
             StringBuilder patternBuilder = new StringBuilder();
-            patternBuilder.append("\\b(");
+//            patternBuilder.append("\\b("); // 全字匹配
+            patternBuilder.append("("); // 不使用单词边界
             List<String> obfuscatedKeys = new ArrayList<>(processedMapping.keySet());
             for (int i = 0; i < obfuscatedKeys.size(); i++) {
                 if (i > 0) {
@@ -100,7 +101,8 @@ public class Replace {
                 }
                 patternBuilder.append(Pattern.quote(obfuscatedKeys.get(i)));
             }
-            patternBuilder.append(")\\b");
+//            patternBuilder.append(")\\b");    // 全字匹配
+            patternBuilder.append(")"); // 不使用单词边界
 
             Pattern combinedPattern = Pattern.compile(patternBuilder.toString());
 
