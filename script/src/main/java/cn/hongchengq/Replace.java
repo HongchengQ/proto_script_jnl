@@ -11,7 +11,6 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Pattern;
 
-// todo 替换后在行尾添加一条注释 内容为混淆字段->解混淆
 @Slf4j
 public class Replace {
     public static void replace() {
@@ -51,7 +50,7 @@ public class Replace {
                     count.put(obfuscated, count.getOrDefault(obfuscated, 0) + 1);
 
                 } catch (Exception e) {
-                    log.error("读取到非正常recordNumber: {}", record.getRecordNumber(), e);
+                    log.error("读取到非正常 recordNumber: {}", record.getRecordNumber(), e);
                 }
             }
 
@@ -114,17 +113,44 @@ public class Replace {
 
                 String line;
                 while ((line = bufferedReader.readLine()) != null) {
+                    // 用于记录该行替换的字段映射
+                    Map<String, String> replacementsInLine = new HashMap<>();
+
                     String processedLine = combinedPattern.matcher(line).replaceAll(match -> {
                         String matchedKey = match.group(1);
-                        return processedMapping.getOrDefault(matchedKey, matchedKey);
+                        String replacement = processedMapping.getOrDefault(matchedKey, matchedKey);
+                        // 记录替换的字段
+                        if (!matchedKey.equals(replacement)) {
+                            replacementsInLine.put(matchedKey, replacement);
+                        }
+                        return replacement;
                     });
+
+                    // 如果有替换发生，则在行尾添加注释
+                    if (!replacementsInLine.isEmpty()) {
+                        StringBuilder comment = new StringBuilder(" // ");
+                        comment.append("[");
+                        boolean first = true;
+                        for (Map.Entry<String, String> replacement : replacementsInLine.entrySet()) {
+                            if (!first) {
+                                comment.append(", ");
+                            }
+                            comment.append(replacement.getKey())
+                                    .append("->")
+                                    .append(replacement.getValue());
+                            first = false;
+                        }
+                        comment.append("]");
+                        processedLine += comment.toString();
+                    }
+
                     bufferedWriter.write(processedLine);
                     bufferedWriter.newLine();
                 }
 
-                log.info("解混淆完成，输出文件: {}", outputFilePath);
+                log.info("mapping 应用完成，输出文件: {}", outputFilePath);
             } catch (IOException e) {
-                log.error("处理proto文件时出错:", e);
+                log.error("生成文件时出错:", e);
             }
 
         } catch (IOException e) {
