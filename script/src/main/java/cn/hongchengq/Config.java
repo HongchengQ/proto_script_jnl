@@ -3,6 +3,7 @@ package cn.hongchengq;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
+import lombok.Data;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -11,8 +12,9 @@ import java.io.File;
 @Slf4j
 public class Config {
     @Getter private static ConfigBean config;
+    @Data
     public static class ConfigBean {
-        int gameVersion = 100;  // proto对应游戏版本 标记用
+        String gameVersion = "1.0.0";  // proto对应游戏版本 标记用
 
         // 启动模式 四种
         // 0：分割(将一个大proto根据message分割为各个单独的文件)
