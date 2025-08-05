@@ -130,8 +130,7 @@ public class Replace {
 
                     // 如果有替换发生，则在行尾添加注释
                     if (!replacementsInLine.isEmpty()) {
-                        StringBuilder comment = new StringBuilder(" // ");
-                        comment.append("[");
+                        StringBuilder comment = new StringBuilder(" /*[");
                         boolean first = true;
                         for (Map.Entry<String, String> replacement : replacementsInLine.entrySet()) {
                             if (!first) {
@@ -142,7 +141,7 @@ public class Replace {
                                     .append(replacement.getValue());
                             first = false;
                         }
-                        comment.append("]");
+                        comment.append("]*/");
                         processedLine += comment.toString();
                     }
 

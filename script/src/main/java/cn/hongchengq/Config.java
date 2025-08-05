@@ -4,16 +4,14 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.File;
 
 @Slf4j
 public class Config {
-    @Getter private static privateConfigBean config;
-    @Setter @Getter
-    public static class privateConfigBean {
+    @Getter private static ConfigBean config;
+    public static class ConfigBean {
         int gameVersion = 100;  // proto对应游戏版本 标记用
 
         // 启动模式 四种
@@ -38,7 +36,7 @@ public class Config {
 
         try {
             File file = new File("config.json");
-            config = jsonMapper.readValue(file, privateConfigBean.class);
+            config = jsonMapper.readValue(file, ConfigBean.class);
         } catch (Exception e) {
             log.error("解析 config.json 失败", e);
         }
