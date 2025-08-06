@@ -67,8 +67,8 @@ public class Split {
                             lastCmdId = 0;
                         }
                         ++messageNestingAllowance;
-                        break;
                     }
+                    break;
                 }
             }
 
@@ -113,9 +113,9 @@ public class Split {
 
     /**
      * 提取 CmdId 后面的数字
-     * 原文件示例: // CmdId: 46
-     * @param line
-     * @return
+     * 目标行示例: // CmdId: 46
+     * @param line 行
+     * @return CmdId
      */
     private static Integer extractCmdId(String line) {
         Pattern pattern = Pattern.compile("//\\s+CmdId:\\s+(\\d+)");
