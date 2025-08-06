@@ -278,17 +278,30 @@ public class Split {
 
             // 写入需要 import 的 message 定义
             for (String importMessage : proto.needImportMessage) {
-                writer.write("import \"" + importMessage + "\"" + ";");
+                writer.write("import \"" + importMessage + ".proto\"" + ";");
                 // 确保每个message定义后都有空行分隔
                 writer.newLine();
             }
             // 添加空行分隔
             writer.newLine();
 
+            boolean isWriteToTopOfMessage = false;
+            boolean isWriteToTopOfCmdId = false;
+
             // 写入目标消息定义
             for (String messageLine : proto.lines) {
+                if (proto.cmdId != 0 && isWriteToTopOfMessage && !isWriteToTopOfCmdId) {
+                    writer.write("\tenum CmdId {\n");
+//                    writer.write("\toption allow_alias = true;\n");
+                    writer.write("\t\tNONE = 0;\n");
+                    writer.write("\t\tCMD_ID = " + proto.cmdId + ";\n");
+                    writer.write("\t}");
+                    writer.newLine();
+                    isWriteToTopOfCmdId = true;
+                }
                 writer.write(messageLine);
                 writer.newLine();
+                isWriteToTopOfMessage = true;
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
