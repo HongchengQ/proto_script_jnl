@@ -51,7 +51,7 @@ public class Split {
 
         for (String line : lines) {
             boolean isNestingTypeLine = false;  // 是可以嵌套类型行
-            String lineImportMessage = "";      // 行导入自定义类型
+            String lineImportMessage = null;      // 行导入自定义类型
 
             // 移除每行前导和尾随空格
             String trimmedLine = line.trim();
@@ -120,7 +120,7 @@ public class Split {
                 // 向顶层message加入自身行
                 topFloorMessages.getLast().lines.add(line);
                 // 向顶层message加入需要import的message
-                if (!isNestingTypeLine) {
+                if (lineImportMessage != null && !isNestingTypeLine) {
                     topFloorMessages.getLast().needImportMessage.add(lineImportMessage);
                 }
             }
@@ -159,8 +159,8 @@ public class Split {
 
     /**
      * 提取需要导入的自定义类型
-     * @param line
-     * @return
+     * @param line 行
+     * @return 需要导入的自定义类型
      */
     private static String extractFieldType(String line) {
         String customType = null;
@@ -173,6 +173,13 @@ public class Split {
         }
         if (customType == null) return null;
 
+        // 跳过enum值定义行（如 ada = 0; 这样的行）
+        Pattern enumValuePattern = Pattern.compile("^\\s*[\\w_]+\\s*=\\s*\\d+\\s*;");
+        Matcher enumValueMatcher = enumValuePattern.matcher(line.trim());
+        if (enumValueMatcher.find()) {
+            return null; // 这是enum值定义行，不需要导入任何类型
+        }
+
         if (customType.equals(ConstProtoType.getRepeatedType())) {
             // 处理 repeated 类型
             Pattern repeatedPattern = Pattern.compile("repeated\\s+([\\w_]+)");
@@ -181,7 +188,7 @@ public class Split {
                 String repeatedType = repeatedMatcher.group(1);
                 // 检查是否为自定义类型（非基本类型）
                 if (!ConstProtoType.getSimpleType().contains(repeatedType)) {
-                    return repeatedType;
+                    customType = repeatedType;
                 }
             }
         } else if (customType.equals(ConstProtoType.getMapType())) {
@@ -192,19 +199,18 @@ public class Split {
                 String mapValueType = mapMatcher.group(2); // 只关心值类型，键类型通常是基本类型
                 // 检查值类型是否为自定义类型（非基本类型）
                 if (!ConstProtoType.getSimpleType().contains(mapValueType)) {
-                    return mapValueType;
+                    customType = mapValueType;
                 }
             }
         }
 
         // 检查是否为基本类型，如果是则不返回
-        if (ConstProtoType.getSimpleType().contains(customType)) {
+        if (ConstProtoType.getAllConstTypes().contains(customType)) {
             return null;
         }
 
         return customType;
     }
-
 
 
     /**
