@@ -36,6 +36,8 @@ public class Config {
         String splitOutputDirectory = "proto_test/dispersible_proto_output";
         // 定义文件头部内容 注意转义
         String[] headerContent = {"option java_package = \"emu.grasscutter.net.proto\";"};
+        // 输出文件前永远清理输出文件夹所有内容
+        boolean clearOutputFolderForever = true;
     }
 
     /**

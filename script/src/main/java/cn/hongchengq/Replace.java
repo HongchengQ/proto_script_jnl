@@ -7,6 +7,7 @@ import org.apache.commons.csv.CSVRecord;
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Pattern;
@@ -117,10 +118,16 @@ public class Replace {
             // 获取proto文件路径
             String inputFilePath = Config.getConfig().inputFilePath;
             String outputPath = Config.getConfig().replaceOutputDirectory;
+            Path outputPathDir = Paths.get(outputPath);
             String outputFilePath = outputPath + "/replace_output.proto";
 
             // 确保输出目录存在
-            Files.createDirectories(Paths.get(outputPath));
+            Files.createDirectories(outputPathDir);
+
+            if (Config.getConfig().isClearOutputFolderForever()) {
+                // 删除输出目录下的所有内容
+                Tools.deleteDirectoryContents(outputPathDir);
+            }
 
             try (BufferedReader bufferedReader = Files.newBufferedReader(Paths.get(inputFilePath));
                  BufferedWriter bufferedWriter = Files.newBufferedWriter(Paths.get(outputFilePath))) {

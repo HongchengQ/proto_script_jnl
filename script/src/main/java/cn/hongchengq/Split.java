@@ -29,7 +29,7 @@ public class Split {
      */
     public static void start(String replaceFilePath) {
         if (replaceFilePath == null) {
-            log.error("由于传入路径为空 不对文件分割");
+            log.error("由于传入路径为空 不继续对文件分割");
             return;
         }
         inputProtoFilePath = replaceFilePath;
@@ -38,6 +38,11 @@ public class Split {
             // 确保输出目录存在
             Files.createDirectories(Paths.get(outputDirectory));
 
+            if (Config.getConfig().isClearOutputFolderForever()) {
+                // 删除输出目录下的所有内容
+                Tools.deleteDirectoryContents((Paths.get(outputDirectory)));
+            }
+
             headerLines.add("// Game Version: " + Config.getConfig().gameVersion + "\n");
 
             // 解析 proto 文件的每一行
@@ -45,6 +50,12 @@ public class Split {
 
             // 自定义文件头部内容添加进 headerLines
             headerLines.addAll(Arrays.asList(Config.getConfig().headerContent));
+
+            // 记录全局需要 import 的 name
+            List<String> allImportMessages = topFloorMessages.parallelStream()
+                    .flatMap(metadata -> metadata.needImportMessage.stream())
+                    .distinct()
+                    .toList();
 
             // 遍历每个顶层 message
             for (topFloorMessagesMetadata topFloorMessage : topFloorMessages) {
@@ -56,6 +67,13 @@ public class Split {
                 // needImportMessage 去重
                 List<String> importMessage = topFloorMessage.needImportMessage;
                 topFloorMessage.needImportMessage = new ArrayList<>(new LinkedHashSet<>(importMessage));
+
+                // 有cmdId 并且名称是全大写未解混淆的proto
+                if (topFloorMessage.cmdId != 0 && topFloorMessage.name.matches("[A-Z]+"))
+                    continue;
+                // 无cmdId 并且不在全局需要import的记录中
+                if (topFloorMessage.cmdId == 0 && !allImportMessages.contains(topFloorMessage.name))
+                    continue;
 
                 // 创建 proto 文件
                 createProtoFile(topFloorMessage);
