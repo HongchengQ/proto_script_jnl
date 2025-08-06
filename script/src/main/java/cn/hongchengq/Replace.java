@@ -34,7 +34,8 @@ public class Replace {
                     String obfuscated;
                     String deobfuscated;
 
-                    if (record.get(0) == null || record.get(1) == null) {
+                    if (record.size() < 2 || record.get(0) == null || record.get(1) == null) {
+                        log.warn("tsv 文件中有一处元素小于 2");
                         continue;
                     }
 
@@ -77,7 +78,7 @@ public class Replace {
                     log.debug("混淆字段 '{}' 重复出现但映射一致，将进行替换", obfuscated);
                 } else {
                     // 重复且映射不一致的字段不使用
-                    log.warn("警告: 混淆字段 '{}' 出现了 {} 次且映射不一致，将不进行替换", obfuscated, occurrence);
+                    log.warn("混淆字段 '{}' 出现了 {} 次且映射不一致，将不进行替换", obfuscated, occurrence);
                 }
             }
 
@@ -123,6 +124,10 @@ public class Replace {
 
             try (BufferedReader bufferedReader = Files.newBufferedReader(Paths.get(inputFilePath));
                  BufferedWriter bufferedWriter = Files.newBufferedWriter(Paths.get(outputFilePath))) {
+
+                bufferedWriter.write("// " + Main.PROJECT_ADDRESS + "\n");
+                bufferedWriter.write("// usedTime: " + Main.usedTime + "\n");
+                bufferedWriter.newLine();
 
                 String line;
                 while ((line = bufferedReader.readLine()) != null) {

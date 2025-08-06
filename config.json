@@ -17,5 +17,7 @@
   // 替换字段后 proto 文件输出路径
   "replaceOutputDirectory": "proto_test/all_in_one_proto_output",
   // 输出proto文件路径
-  "splitOutputDirectory": "proto_test/dispersible_proto_output"
+  "splitOutputDirectory": "proto_test/dispersible_proto_output",
+  // 定义文件头部内容 注意转义
+  "headerContent": ["option java_package = \"emu.grasscutter.net.proto\";"]
 }

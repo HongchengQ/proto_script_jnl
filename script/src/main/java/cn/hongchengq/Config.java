@@ -34,6 +34,8 @@ public class Config {
         String replaceOutputDirectory = "proto_test/all_in_one_proto_output";
         // 输出proto文件路径
         String splitOutputDirectory = "proto_test/dispersible_proto_output";
+        // 定义文件头部内容 注意转义
+        String[] headerContent = {"option java_package = \"emu.grasscutter.net.proto\";"};
     }
 
     /**

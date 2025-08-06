@@ -13,24 +13,40 @@ import java.util.regex.Pattern;
 
 @Slf4j
 public class Split {
+    // 存储路径
     static String inputProtoFilePath = Config.getConfig().replaceOutputDirectory;
     static String outputDirectory = Config.getConfig().splitOutputDirectory;
 
+    // 顶层 message
     static List<topFloorMessagesMetadata> topFloorMessages = new ArrayList<>();
 
     // 存储所有文件头部基本信息 - syntax、package、import等 (是根据大proto复制来的)
     static List<String> headerLines = new ArrayList<>();
 
+    /**
+     * 入口方法
+     * @param replaceFilePath Replace后传入的路径
+     */
     public static void start(String replaceFilePath) {
-        if (replaceFilePath == null) return;
+        if (replaceFilePath == null) {
+            log.error("由于传入路径为空 不对文件分割");
+            return;
+        }
         inputProtoFilePath = replaceFilePath;
 
         try {
             // 确保输出目录存在
             Files.createDirectories(Paths.get(outputDirectory));
 
+            headerLines.add("// Game Version: " + Config.getConfig().gameVersion + "\n");
+
+            // 解析 proto 文件的每一行
             parseProtoFileLines();
 
+            // 自定义文件头部内容添加进 headerLines
+            headerLines.addAll(Arrays.asList(Config.getConfig().headerContent));
+
+            // 遍历每个顶层 message
             for (topFloorMessagesMetadata topFloorMessage : topFloorMessages) {
                 for (String s : topFloorMessage.extraNestedMessagesName) {
                     // 清除无用数据
@@ -45,12 +61,15 @@ public class Split {
                 createProtoFile(topFloorMessage);
             }
 
-            log.info("Proto文件分割完成，共生成 {} 个文件", topFloorMessages.size());
+            log.info("Proto文件分割完成，共生成 {} 个文件，输出目录: {}", topFloorMessages.size(), outputDirectory);
         } catch (IOException e) {
             log.error("分割proto文件时出错: ", e);
         }
     }
 
+    /**
+     * 解析 proto 文件的每一行
+     */
     public static void parseProtoFileLines() throws IOException {
         List<String> lines = Files.readAllLines(Paths.get(inputProtoFilePath));
 
@@ -207,6 +226,11 @@ public class Split {
                     customType = mapValueType;
                 }
             }
+        } else if (customType.equals("google")) {
+            // todo
+            // google.protobuf.Any data = 3;
+            // 这行会被识别为 google
+            return null;
         }
 
         // 检查是否为基本类型，如果是则不返回
@@ -240,6 +264,10 @@ public class Split {
         String fileName = outputDirectory + File.separator + proto.name + ".proto";
 
         try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(fileName))) {
+            writer.write("// " + Main.PROJECT_ADDRESS + "\n");
+            writer.write("// usedTime: " + Main.usedTime + "\n");
+            writer.newLine();
+
             // 写入头部信息
             for (String headerLine : headerLines) {
                 writer.write(headerLine);
@@ -277,7 +305,7 @@ public class Split {
         List<String> lines = new ArrayList<>();                                     // 自身包含的行
         List<String> needImportMessage = new ArrayList<>();                         // 需要import的message
         List<String> extraNestedMessagesName = new ArrayList<>();                   // 自身额外嵌套类的name
-        List<topFloorMessagesMetadata> extraNestedMessages = new ArrayList<>();     // 自身额外嵌套类 暂时不需要
+        List<topFloorMessagesMetadata> extraNestedMessages = new ArrayList<>();     // 自身额外嵌套类 暂时用不到
     }
 
 }
