@@ -13,8 +13,8 @@ import java.util.regex.Pattern;
 
 @Slf4j
 public class Replace {
-    public static void start() {
-        String tsvFilePath = Config.getConfig().mappingFilePath;
+        public static String start() {
+        String tsvFilePath = Config.getConfig().replaceMappingFilePath;
 
         // 用于存储混淆字段到解混淆字段的映射
         Map<String, String> mapping = new HashMap<>();
@@ -107,8 +107,8 @@ public class Replace {
             Pattern combinedPattern = Pattern.compile(patternBuilder.toString());
 
             // 获取proto文件路径
-            String protoFilePath = Config.getConfig().inputProtoFilePath;
-            String outputFilePath = protoFilePath.replace(".proto", "_deobfuscated.proto");
+            String protoFilePath = Config.getConfig().inputFilePath;
+            String outputFilePath = Config.getConfig().replaceOutputDirectory + "output.proto";
 
             try (BufferedReader bufferedReader = Files.newBufferedReader(Paths.get(protoFilePath));
                  BufferedWriter bufferedWriter = Files.newBufferedWriter(Paths.get(outputFilePath))) {
@@ -150,6 +150,7 @@ public class Replace {
                 }
 
                 log.info("mapping 应用完成，输出文件: {}", outputFilePath);
+                return outputFilePath;
             } catch (IOException e) {
                 log.error("生成文件时出错:", e);
             }
@@ -157,5 +158,6 @@ public class Replace {
         } catch (IOException e) {
             log.error(String.valueOf(e));
         }
+        return null;
     }
 }

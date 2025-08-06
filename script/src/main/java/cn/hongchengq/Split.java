@@ -13,15 +13,18 @@ import java.util.regex.Pattern;
 
 @Slf4j
 public class Split {
-    static String inputProtoFilePath = Config.getConfig().inputProtoFilePath;
-    static String outputDirectory = Config.getConfig().outputProtoFilePath;
+    static String inputProtoFilePath = Config.getConfig().replaceOutputDirectory;
+    static String outputDirectory = Config.getConfig().splitOutputDirectory;
 
     static List<topFloorMessagesMetadata> topFloorMessages = new ArrayList<>();
 
     // 存储所有文件头部基本信息 - syntax、package、import等 (是根据大proto复制来的)
     static List<String> headerLines = new ArrayList<>();
 
-    public static void start() {
+    public static void start(String replaceFilePath) {
+        if (replaceFilePath == null) return;
+        inputProtoFilePath = replaceFilePath;
+
         try {
             // 确保输出目录存在
             Files.createDirectories(Paths.get(outputDirectory));
@@ -51,7 +54,7 @@ public class Split {
     public static void parseProtoFileLines() throws IOException {
         List<String> lines = Files.readAllLines(Paths.get(inputProtoFilePath));
 
-        // message嵌套余量: 当行内出现可以嵌套或被嵌套的类型时 +1, 匹配到 "}" 符号时 -1, 归零时生成一个新的message
+        // message嵌套深度: 当行内出现可以嵌套或被嵌套的类型时 +1, 匹配到 "}" 符号时 -1, 归零时生成一个新的message
         int messageNestingAllowance = 0;
         // 最后一次读取的 cmdId
         int lastCmdId = 0;
@@ -214,7 +217,6 @@ public class Split {
         return customType;
     }
 
-
     /**
      * 提取 CmdId 后面的数字
      * 目标行示例: // CmdId: 46
@@ -233,7 +235,6 @@ public class Split {
         }
         return null;
     }
-
 
     private static void createProtoFile(topFloorMessagesMetadata proto) {
         String fileName = outputDirectory + File.separator + proto.name + ".proto";
