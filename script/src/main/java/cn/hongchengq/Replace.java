@@ -31,8 +31,15 @@ public class Replace {
             for (CSVRecord record : csvParser) {
                 log.debug(String.valueOf(record));
                 try {
-                    String obfuscated = record.get(0);
-                    String deobfuscated = record.get(1);
+                    String obfuscated;
+                    String deobfuscated;
+
+                    if (record.get(0) == null || record.get(1) == null) {
+                        continue;
+                    }
+
+                    obfuscated = record.get(0);
+                    deobfuscated = record.get(1);
 
                     // 检查是否已存在该混淆字段
                     if (mapping.containsKey(obfuscated)) {
@@ -50,7 +57,7 @@ public class Replace {
                     count.put(obfuscated, count.getOrDefault(obfuscated, 0) + 1);
 
                 } catch (Exception e) {
-                    log.error("读取到非正常 recordNumber: {}", record.getRecordNumber(), e);
+                    log.error(String.valueOf(e));
                 }
             }
 
@@ -107,10 +114,14 @@ public class Replace {
             Pattern combinedPattern = Pattern.compile(patternBuilder.toString());
 
             // 获取proto文件路径
-            String protoFilePath = Config.getConfig().inputFilePath;
-            String outputFilePath = Config.getConfig().replaceOutputDirectory + "output.proto";
+            String inputFilePath = Config.getConfig().inputFilePath;
+            String outputPath = Config.getConfig().replaceOutputDirectory;
+            String outputFilePath = outputPath + "/replace_output.proto";
 
-            try (BufferedReader bufferedReader = Files.newBufferedReader(Paths.get(protoFilePath));
+            // 确保输出目录存在
+            Files.createDirectories(Paths.get(outputPath));
+
+            try (BufferedReader bufferedReader = Files.newBufferedReader(Paths.get(inputFilePath));
                  BufferedWriter bufferedWriter = Files.newBufferedWriter(Paths.get(outputFilePath))) {
 
                 String line;
