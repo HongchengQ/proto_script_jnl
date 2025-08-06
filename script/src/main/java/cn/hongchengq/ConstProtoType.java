@@ -10,11 +10,12 @@ public class ConstProtoType {
     private static final String messageType = "message";
     private static final String enumType = "enum";
     private static final String oneOfType = "oneof";
+    @Getter
     private static final String repeatedType = "repeated";
     @Getter
     private static final List<String> FieldType = Arrays.asList("bool", "string", "uint32", "uint64", "int32", "int64", "float", "double", "bytes", "fixed32", "fixed64", "sfixed32", "sfixed64");
     @Getter
-    private static final String mapType = "map<.*, .*>";
+    private static final String mapType = "map";
     @Getter
     private static final String dumpedCmdId = "// CmdId:";
 
@@ -34,6 +35,13 @@ public class ConstProtoType {
 
         tempList.add(repeatedType);
         tempList.add(mapType);
+        tempList.addAll(FieldType);
+
+        return tempList;
+    }
+
+    public static List<String> getSimpleType() {
+        List<String> tempList = new ArrayList<>(getConstNestingType());
         tempList.addAll(FieldType);
 
         return tempList;

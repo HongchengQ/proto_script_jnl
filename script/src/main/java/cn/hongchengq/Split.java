@@ -50,8 +50,8 @@ public class Split {
         int lastCmdId = 0;
 
         for (String line : lines) {
-            boolean isNestingTypeLine = false;
-            String lineImportMessage = "";
+            boolean isNestingTypeLine = false;  // 是可以嵌套类型行
+            String lineImportMessage = "";      // 行导入自定义类型
 
             // 移除每行前导和尾随空格
             String trimmedLine = line.trim();
@@ -88,14 +88,15 @@ public class Split {
                 }
             }
 
-            // 构建需要导入的类型
-            int fieldTypeMaxCount = ConstProtoType.getAllConstTypes().size();
-            int fieldTypeCount = 0; // 已经查找过的固定类型 等于max时代表这一行不是固定类型 等于0时后续也不需要操作
-            for (String fieldType : ConstProtoType.getAllConstTypes()) {
-                if (isNestingTypeLine) {
-                    break;
-                }
+            // 查找需要导入的自定义类型
+            int fieldTypeMaxCount = ConstProtoType.getSimpleType().size();
+            int fieldTypeCount = 0; // 已经查找过的固定类型, 等于max时代表这一行不是固定类型 极大可能是自定义类型 需要移交下一步操作, 等于0时后续也不需要操作
+            for (String fieldType : ConstProtoType.getSimpleType()) {
+                if (isNestingTypeLine) break;
+
                 fieldTypeCount++;
+
+                // 行开头时基本数据类型
                 if (trimmedLine.startsWith(fieldType + " ")) {
                     fieldTypeCount = 0;
                     break;
@@ -162,13 +163,48 @@ public class Split {
      * @return
      */
     private static String extractFieldType(String line) {
+        String customType = null;
+
+        // 对于简单行(类型) 使用这样的方式
         Pattern pattern = Pattern.compile("^\\s*([\\w_]+)");
         Matcher matcher = pattern.matcher(line);
         if (matcher.find()) {
-            return matcher.group(1);
+            customType = matcher.group(1);
         }
-        return null;
+        if (customType == null) return null;
+
+        if (customType.equals(ConstProtoType.getRepeatedType())) {
+            // 处理 repeated 类型
+            Pattern repeatedPattern = Pattern.compile("repeated\\s+([\\w_]+)");
+            Matcher repeatedMatcher = repeatedPattern.matcher(line);
+            if (repeatedMatcher.find()) {
+                String repeatedType = repeatedMatcher.group(1);
+                // 检查是否为自定义类型（非基本类型）
+                if (!ConstProtoType.getSimpleType().contains(repeatedType)) {
+                    return repeatedType;
+                }
+            }
+        } else if (customType.equals(ConstProtoType.getMapType())) {
+            // 处理 map 类型
+            Pattern mapPattern = Pattern.compile("map<\\s*([\\w_]+)\\s*,\\s*([\\w_]+)\\s*>");
+            Matcher mapMatcher = mapPattern.matcher(line);
+            if (mapMatcher.find()) {
+                String mapValueType = mapMatcher.group(2); // 只关心值类型，键类型通常是基本类型
+                // 检查值类型是否为自定义类型（非基本类型）
+                if (!ConstProtoType.getSimpleType().contains(mapValueType)) {
+                    return mapValueType;
+                }
+            }
+        }
+
+        // 检查是否为基本类型，如果是则不返回
+        if (ConstProtoType.getSimpleType().contains(customType)) {
+            return null;
+        }
+
+        return customType;
     }
+
 
 
     /**
