@@ -2,6 +2,8 @@ package cn.hongchengq;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -16,24 +18,29 @@ public class Split {
 
     static List<topFloorMessagesMetadata> topFloorMessages = new ArrayList<>();
 
-    public static void split() {
+    // 存储所有文件头部基本信息 - syntax、package、import等 (是根据大proto复制来的)
+    static List<String> headerLines = new ArrayList<>();
+
+    public static void start() {
         try {
             // 确保输出目录存在
             Files.createDirectories(Paths.get(outputDirectory));
 
-            // 存储文件头部信息（syntax、package、import等）
-            List<String> headerLines = new ArrayList<>();
-
             parseProtoFileLines();
 
-            // 收尾 清除无用数据
             for (topFloorMessagesMetadata topFloorMessage : topFloorMessages) {
                 for (String s : topFloorMessage.extraNestedMessagesName) {
+                    // 清除无用数据
                     topFloorMessage.needImportMessage.remove(s);
                 }
-            }
 
-            debug();
+                // needImportMessage 去重
+                List<String> importMessage = topFloorMessage.needImportMessage;
+                topFloorMessage.needImportMessage = new ArrayList<>(new LinkedHashSet<>(importMessage));
+
+                // 创建 proto 文件
+                createProtoFile(topFloorMessage);
+            }
 
             log.info("Proto文件分割完成，共生成 {} 个文件", topFloorMessages.size());
         } catch (IOException e) {
@@ -46,7 +53,7 @@ public class Split {
 
         // message嵌套余量: 当行内出现可以嵌套或被嵌套的类型时 +1, 匹配到 "}" 符号时 -1, 归零时生成一个新的message
         int messageNestingAllowance = 0;
-
+        // 最后一次读取的 cmdId
         int lastCmdId = 0;
 
         for (String line : lines) {
@@ -55,6 +62,15 @@ public class Split {
 
             // 移除每行前导和尾随空格
             String trimmedLine = line.trim();
+
+            // 收集文件头部信息
+            if (topFloorMessages.isEmpty() &&
+                    (trimmedLine.startsWith("syntax") ||
+                            trimmedLine.startsWith("package") ||
+                            trimmedLine.startsWith("import"))) {
+                headerLines.add(line);
+                continue;
+            }
 
             if (trimmedLine.startsWith(ConstProtoType.getDumpedCmdId() + " ")) {
                 Integer CmdId = extractCmdId(trimmedLine); // 提取 CmdId
@@ -126,20 +142,6 @@ public class Split {
             }
 
         }
-    }
-
-    private static void debug() {
-        // debug
-        StringBuilder s = new StringBuilder();
-        for (topFloorMessagesMetadata p : topFloorMessages) {
-            s.append(p.name);
-            s.append(" ").append(p.cmdId);
-            s.append("\n");
-            p.lines.forEach(ss -> s.append(ss).append("\n"));
-            s.append(p.name).append("依赖message: ").append(p.needImportMessage);
-            s.append("\n\n");
-        }
-        System.out.println(s);
     }
 
     /**
@@ -232,6 +234,37 @@ public class Split {
         return null;
     }
 
+
+    private static void createProtoFile(topFloorMessagesMetadata proto) {
+        String fileName = outputDirectory + File.separator + proto.name + ".proto";
+
+        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(fileName))) {
+            // 写入头部信息
+            for (String headerLine : headerLines) {
+                writer.write(headerLine);
+                writer.newLine();
+            }
+            // 添加空行分隔
+            writer.newLine();
+
+            // 写入需要 import 的 message 定义
+            for (String importMessage : proto.needImportMessage) {
+                writer.write("import \"" + importMessage + "\"" + ";");
+                // 确保每个message定义后都有空行分隔
+                writer.newLine();
+            }
+            // 添加空行分隔
+            writer.newLine();
+
+            // 写入目标消息定义
+            for (String messageLine : proto.lines) {
+                writer.write(messageLine);
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * proto 输出信息元数据

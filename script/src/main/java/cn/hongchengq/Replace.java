@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
 
 @Slf4j
 public class Replace {
-    public static void replace() {
+    public static void start() {
         String tsvFilePath = Config.getConfig().mappingFilePath;
 
         // 用于存储混淆字段到解混淆字段的映射

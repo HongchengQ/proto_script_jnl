@@ -3,7 +3,7 @@ package cn.hongchengq;
 public class Main {
     public static void main(String[] args) {
         Config.JsonLoader();
-        Replace.replace();
-        Split.split();
+        Replace.start();
+        Split.start();
     }
 }
