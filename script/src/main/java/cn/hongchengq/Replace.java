@@ -10,11 +10,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.regex.Pattern;
 
 @Slf4j
 public class Replace {
-        public static String start() {
+    public static String start() {
         String tsvFilePath = Config.getConfig().replaceMappingFilePath;
 
         // 用于存储混淆字段到解混淆字段的映射
@@ -36,7 +35,7 @@ public class Replace {
                     String deobfuscated;
 
                     if (record.size() < 2 || record.get(0) == null || record.get(1) == null) {
-                        log.warn("tsv 文件中有一处元素小于 2");
+                        log.warn("tsv 文件中有一处元素小于 2，不进行记录");
                         continue;
                     }
 
@@ -99,21 +98,11 @@ public class Replace {
                 }
             }
 
-            // 构建一个包含所有混淆字段的复合正则表达式（不使用单词边界）
-            StringBuilder patternBuilder = new StringBuilder();
-//            patternBuilder.append("\\b("); // 全字匹配
-            patternBuilder.append("("); // 不使用单词边界
-            List<String> obfuscatedKeys = new ArrayList<>(processedMapping.keySet());
-            for (int i = 0; i < obfuscatedKeys.size(); i++) {
-                if (i > 0) {
-                    patternBuilder.append("|");
-                }
-                patternBuilder.append(Pattern.quote(obfuscatedKeys.get(i)));
+            // 构建Trie树用于匹配
+            TrieNode root = new TrieNode();
+            for (Map.Entry<String, String> entry : processedMapping.entrySet()) {
+                addToTrie(root, entry.getKey(), entry.getValue());
             }
-//            patternBuilder.append(")\\b");    // 全字匹配
-            patternBuilder.append(")"); // 不使用单词边界
-
-            Pattern combinedPattern = Pattern.compile(patternBuilder.toString());
 
             // 获取proto文件路径
             String inputFilePath = Config.getConfig().inputFilePath;
@@ -138,36 +127,7 @@ public class Replace {
 
                 String line;
                 while ((line = bufferedReader.readLine()) != null) {
-                    // 用于记录该行替换的字段映射
-                    Map<String, String> replacementsInLine = new HashMap<>();
-
-                    String processedLine = combinedPattern.matcher(line).replaceAll(match -> {
-                        String matchedKey = match.group(1);
-                        String replacement = processedMapping.getOrDefault(matchedKey, matchedKey);
-                        // 记录替换的字段
-                        if (!matchedKey.equals(replacement)) {
-                            replacementsInLine.put(matchedKey, replacement);
-                        }
-                        return replacement;
-                    });
-
-                    // 如果有替换发生，则在行尾添加注释
-                    if (!replacementsInLine.isEmpty()) {
-                        StringBuilder comment = new StringBuilder(" /*[");
-                        boolean first = true;
-                        for (Map.Entry<String, String> replacement : replacementsInLine.entrySet()) {
-                            if (!first) {
-                                comment.append(", ");
-                            }
-                            comment.append(replacement.getKey())
-                                    .append("->")
-                                    .append(replacement.getValue());
-                            first = false;
-                        }
-                        comment.append("]*/");
-                        processedLine += comment.toString();
-                    }
-
+                    String processedLine = replaceUsingTrie(line, root);
                     bufferedWriter.write(processedLine);
                     bufferedWriter.newLine();
                 }
@@ -182,5 +142,95 @@ public class Replace {
             log.error(String.valueOf(e));
         }
         return null;
+    }
+
+    /**
+     * 使用Trie树进行字符串替换
+     */
+    private static String replaceUsingTrie(String line, TrieNode root) {
+        if (line.isEmpty()) {
+            return line;
+        }
+
+        StringBuilder result = new StringBuilder(line.length() * 2);
+        Map<String, String> replacements = new HashMap<>();
+
+        int i = 0;
+        while (i < line.length()) {
+            TrieNode current = root;
+            int matchEnd = -1;
+            String replacementValue = null;
+
+            // 从当前位置开始查找最长匹配
+            for (int j = i; j < line.length(); j++) {
+                char c = line.charAt(j);
+                TrieNode next = current.children.get(c);
+
+                if (next == null) {
+                    break;
+                }
+
+                current = next;
+                if (current.isEndOfWord) {
+                    matchEnd = j;
+                    replacementValue = current.replacement;
+                }
+            }
+
+            // 如果找到匹配项
+            if (matchEnd != -1) {
+                String matchedKey = line.substring(i, matchEnd + 1);
+                result.append(replacementValue);
+                if (!matchedKey.equals(replacementValue)) {
+                    replacements.put(matchedKey, replacementValue);
+                }
+                i = matchEnd + 1;
+            } else {
+                // 没有匹配，复制当前字符
+                result.append(line.charAt(i));
+                i++;
+            }
+        }
+
+        // 添加注释（如果有的话）
+        if (!replacements.isEmpty()) {
+            result.append(" /*[");
+            boolean first = true;
+            for (Map.Entry<String, String> replacement : replacements.entrySet()) {
+                if (!first) {
+                    result.append(", ");
+                }
+                result.append(replacement.getKey())
+                        .append("->")
+                        .append(replacement.getValue());
+                first = false;
+            }
+            result.append("]*/");
+        }
+
+        return result.toString();
+    }
+
+    /**
+     * 将键值对添加到Trie树中
+     */
+    private static void addToTrie(TrieNode root, String key, String value) {
+        TrieNode current = root;
+        for (int i = 0; i < key.length(); i++) {
+            char ch = key.charAt(i);
+            current.children.putIfAbsent(ch, new TrieNode());
+            current = current.children.get(ch);
+        }
+        current.isEndOfWord = true;
+        current.replacement = value;
+    }
+
+    /**
+     * Trie树节点
+     */
+    private static class TrieNode {
+        Map<Character, TrieNode> children = new HashMap<>();
+        boolean isEndOfWord = false;
+        String replacement;
     }
 }

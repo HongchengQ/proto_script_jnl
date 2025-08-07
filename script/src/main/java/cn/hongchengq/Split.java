@@ -137,41 +137,40 @@ public class Split {
                             // 当前message在上一层嵌套中 需要导入
                             topFloorMessages.getLast().extraNestedMessagesName.add(messageName);
                         }
-                        ++messageNestingAllowance;
+                        messageNestingAllowance++;
                     }
                     isNestingTypeLine = true;
                     break;
                 }
             }
 
-            // 查找需要导入的自定义类型
             int fieldTypeMaxCount = ConstProtoType.getSimpleType().size();
             int fieldTypeCount = 0; // 已经查找过的固定类型, 等于max时代表这一行不是固定类型 极大可能是自定义类型 需要移交下一步操作, 等于0时后续也不需要操作
+
+            // 查找需要导入的自定义类型
             for (String fieldType : ConstProtoType.getSimpleType()) {
                 if (isNestingTypeLine) break;
 
-                fieldTypeCount++;
-
-                // 行开头时基本数据类型
+                // 如果行开头是基本数据类型 直接退出循环
                 if (trimmedLine.startsWith(fieldType + " ")) {
                     fieldTypeCount = 0;
                     break;
                 }
+
+                fieldTypeCount++;
             }
 
             if ((fieldTypeCount == fieldTypeMaxCount)) {
-                String name = extractFieldType(trimmedLine); // 提取字段类型名称
-                if (name != null) {
-                    lineImportMessage = name;
-                }
+                // 提取字段类型名称
+                lineImportMessage = extractFieldType(trimmedLine);
             }
 
             // 根据符号判断已经进入方法末尾
             if (trimmedLine.equals("}")) {
-                --messageNestingAllowance;
+                messageNestingAllowance--;
             }
 
-            // messages已录入，并且录入不是cmdid那一行
+            // messages已录入，并且录入不是cmdId那一行
             if (!topFloorMessages.isEmpty() && !trimmedLine.startsWith(ConstProtoType.getDumpedCmdId() + " ")) {
                 // 向顶层message加入自身行
                 topFloorMessages.getLast().lines.add(line);
@@ -336,7 +335,7 @@ public class Split {
         List<String> lines = new ArrayList<>();                                     // 自身包含的行
         List<String> needImportMessage = new ArrayList<>();                         // 需要import的message
         List<String> extraNestedMessagesName = new ArrayList<>();                   // 自身额外嵌套类的name
-        List<topFloorMessagesMetadata> extraNestedMessages = new ArrayList<>();     // 自身额外嵌套类 暂时用不到
+//        List<topFloorMessagesMetadata> extraNestedMessages = new ArrayList<>();     // 自身额外嵌套类 暂时用不到
     }
 
 }
