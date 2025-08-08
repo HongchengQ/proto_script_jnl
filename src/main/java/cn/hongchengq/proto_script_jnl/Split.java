@@ -6,6 +6,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -82,8 +83,18 @@ public class Split {
 
             // 创建 PacketOpcodes.java
             if (Config.getConfig().createPacketOpcodes) {
-                String fileName = Config.getConfig().opsOutputFilePath;
-                try (var OpWriter = Files.newBufferedWriter(Paths.get(fileName))) {
+                Path OpFileDirectory = Paths.get(Config.getConfig().opsOutputDirectory);
+                Path OpFilePath = Paths.get(OpFileDirectory + "/PacketOpcodes.java");
+
+                // 确保输出目录存在
+                Files.createDirectories(OpFileDirectory);
+
+                if (Config.getConfig().isClearOutputFolderForever()) {
+                    // 删除输出目录下的所有内容
+                    Tools.deleteDirectoryContents(OpFileDirectory);
+                }
+
+                try (BufferedWriter OpWriter = Files.newBufferedWriter(OpFilePath)) {
                     OpWriter.write(Config.getConfig().packetHeader + "\n");
                     OpWriter.newLine();
                     OpWriter.write("public final class PacketOpcodes {\n");
@@ -92,7 +103,7 @@ public class Split {
                     }
                     OpWriter.write("}\n");
                 }
-                log.info("{} 已生成完毕", fileName);
+                log.info("{} 已生成完毕", OpFilePath);
             }
         } catch (IOException e) {
             log.error(String.valueOf(e));

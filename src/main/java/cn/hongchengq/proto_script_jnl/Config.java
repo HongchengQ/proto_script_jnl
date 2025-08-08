@@ -43,7 +43,7 @@ public class Config {
         boolean createPacketOpcodes = true;
         String packetHeader = "package emu.grasscutter.net.packet;";
         // PacketOpcodes.java 生成路径
-        String opsOutputFilePath = "proto/packet_opcodes_output/PacketOpcodes.java";
+        String opsOutputDirectory = "proto/packet_opcodes_output";
     }
 
     /**
@@ -56,11 +56,17 @@ public class Config {
                 .build();
         JsonMapper jsonMapper = new JsonMapper(jsonFactory);
 
+        File file = new File("config.json");
+
+        if (!file.isFile()) {
+            log.error("{} The file does not exist", file);
+            System.exit(0);
+        }
+
         try {
-            File file = new File("config.json");
             config = jsonMapper.readValue(file, ConfigBean.class);
         } catch (Exception e) {
-            log.error("解析 config.json 失败", e);
+            log.error("parse {} error", file, e);
         }
     }
 }
