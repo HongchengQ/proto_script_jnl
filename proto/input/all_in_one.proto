@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+import "google/protobuf/any.proto";
+
+// CmdId: 46
+message IAAEHMCIHOG {
+    uint32 FGGNIBBOEDN = 8; 
+    bool PKGNGIEDFPO = 3; 
+    uint32 NDLIMICHKON = 15; 
+    KBFKFAMHDOH da = 999;
+    oneof PKCPIBNIGPB {
+        KBFKFAMHDOH avatar_result = 145;
+        KKHMNLBKHFI avatar_available_count_result = 817;
+        AGEJKCAHCMI coin_result = 1125;
+        OCDKPMNAPBA card_result = 1907;
+    }
+}
+
+message KBFKFAMHDOH {
+    repeated uint64 avatar_guid_list = 6; 
+    uint32 POFMFMBFAOE = 10; 
+}
+
+message IHIEIDDPBEM {
+    uint64 avatar_guid = 6; 
+    bool GLJBECKHDHD = 7; 
+    bool BCLEMNFOGKB = 3; 
+    uint32 ODBOCDIBECK = 14; 
+    uint32 card_id = 15; 
+    uint32 CHAMFFMDPNL = 4; 
+    uint64 CCCJIPLFEFI = 10; 
+}
+
+message KKHMNLBKHFI {
+    repeated uint64 avatar_guid_list = 5; 
+    uint32 HBCHEPOFHLH = 13; 
+}
+
+message OCDKPMNAPBA {
+    repeated IHIEIDDPBEM OKCJJDIAGIK = 6; 
+}
+
+message AGEJKCAHCMI {
+    uint32 KPMOCHFDHFM = 12; 
+    uint32 BAEDAJNFKHN = 9; 
+}
+
+
+message test_one {
+    enum iooo {
+        ada = 0;
+        adadf = 1;
+    }
+
+    uint32 awdad = 8;
+}
+
+message test_two {
+    map<uint32, AGEJKCAHCMI> settle_show = 11;
+    repeated OCDKPMNAPBA adadww = 8888;
+    int32 data = 3;
+
+    message fsa {
+        uint32 ada = 6;
+        uint32 adadf = 1;
+    }
+
+    enum SDFO {
+      None = 0;
+    }
+
+    fsa awdad = 8;
+}

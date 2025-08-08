@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 public class Split {
     // 存储路径
     static String inputProtoFilePath = Config.getConfig().replaceOutputDirectory;
-    static String outputDirectory = Config.getConfig().splitOutputDirectory;
+    static String outputProtoDirectory = Config.getConfig().splitOutputDirectory;
 
     // 顶层 message
     static List<topFloorMessagesMetadata> topFloorMessages = new ArrayList<>();
@@ -36,11 +36,11 @@ public class Split {
 
         try {
             // 确保输出目录存在
-            Files.createDirectories(Paths.get(outputDirectory));
+            Files.createDirectories(Paths.get(outputProtoDirectory));
 
             if (Config.getConfig().isClearOutputFolderForever()) {
                 // 删除输出目录下的所有内容
-                Tools.deleteDirectoryContents((Paths.get(outputDirectory)));
+                Tools.deleteDirectoryContents((Paths.get(outputProtoDirectory)));
             }
 
             headerLines.add("// Game Version: " + Config.getConfig().gameVersion + "\n");
@@ -57,23 +57,11 @@ public class Split {
                     .distinct()
                     .toList();
 
-            String fileName = "PacketOpcodes.java";
-            try(var opwriter = Files.newBufferedWriter(Paths.get(fileName))) {
-                if (Config.getConfig().createPacketOpcodes) {
-                    opwriter.write(Config.getConfig().packetHeader + "\n");
-                    opwriter.newLine();
-                    opwriter.write("public final class PacketOpcodes {\n");
-                    for (var message : topFloorMessages){
-                        opwriter.write("    public static final int " + message.name + "= " + message.cmdId + ";\n");
-                    }
-                    opwriter.write("}\n");
-                }
-            }
-            // 遍历每个顶层 message
+            // 遍历每个顶层 message 进行数据清理和创建 proto
             for (topFloorMessagesMetadata topFloorMessage : topFloorMessages) {
-                for (String s : topFloorMessage.extraNestedMessagesName) {
-                    // 清除无用数据
-                    topFloorMessage.needImportMessage.remove(s);
+                // 清除被嵌套进message的message
+                for (String name : topFloorMessage.extraNestedMessagesName) {
+                    topFloorMessage.needImportMessage.remove(name);
                 }
 
                 // needImportMessage 去重
@@ -90,10 +78,24 @@ public class Split {
                 // 创建 proto 文件
                 createProtoFile(topFloorMessage);
             }
+            log.info("Proto文件分割完成，共生成 {} 个文件，输出目录: {}", topFloorMessages.size(), outputProtoDirectory);
 
-            log.info("Proto文件分割完成，共生成 {} 个文件，输出目录: {}", topFloorMessages.size(), outputDirectory);
+            // 创建 PacketOpcodes.java
+            if (Config.getConfig().createPacketOpcodes) {
+                String fileName = Config.getConfig().opsOutputFilePath;
+                try (var OpWriter = Files.newBufferedWriter(Paths.get(fileName))) {
+                    OpWriter.write(Config.getConfig().packetHeader + "\n");
+                    OpWriter.newLine();
+                    OpWriter.write("public final class PacketOpcodes {\n");
+                    for (var message : topFloorMessages) {
+                        OpWriter.write("    public static final int " + message.name + "= " + message.cmdId + ";\n");
+                    }
+                    OpWriter.write("}\n");
+                }
+                log.info("{} 已生成完毕", fileName);
+            }
         } catch (IOException e) {
-            log.error("分割proto文件时出错: ", e);
+            log.error(String.valueOf(e));
         }
     }
 
@@ -290,7 +292,7 @@ public class Split {
     }
 
     private static void createProtoFile(topFloorMessagesMetadata proto) {
-        String fileName = outputDirectory + File.separator + proto.name + ".proto";
+        String fileName = outputProtoDirectory + File.separator + proto.name + ".proto";
 
         try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(fileName))) {
             writer.write("// " + Main.PROJECT_ADDRESS + "\n");

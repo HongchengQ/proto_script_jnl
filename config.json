@@ -3,21 +3,17 @@
   "gameVersion": "1.0.0",
 
   // todo
-  // 启动模式 四种
-  // 0： 分割(将一个大proto根据message分割为各个单独的文件)
-  // 1： 分割(将一个大proto根据先前定义的类型分割为几个文件)
-  // 10：合并(根据message分割的文件合并为一个大proto)
-  // 11：合并(根据类型分割的文件合并为一个大proto)
+  // 启动模式
   "bootMode": 0,
 
   // 原始proto文件路径
-  "inputFilePath": "proto_test/input/test.proto",
+  "inputFilePath": "proto/input/all_in_one.proto",
   // 映射文件路径
-  "replaceMappingFilePath": "proto_test/input/mapping.tsv",
+  "replaceMappingFilePath": "proto/input/mapping.tsv",
   // 替换字段后 proto 文件输出路径
-  "replaceOutputDirectory": "proto_test/all_in_one_proto_output",
+  "replaceOutputDirectory": "proto/all_in_one_proto_output",
   // 输出proto文件路径
-  "splitOutputDirectory": "proto_test/dispersible_proto_output",
+  "splitOutputDirectory": "proto/dispersible_proto_output",
   // 定义文件头部内容 注意转义
   "headerContent": ["option java_package = \"emu.grasscutter.net.proto\";"],
   // 输出文件前永远清理输出文件夹所有内容

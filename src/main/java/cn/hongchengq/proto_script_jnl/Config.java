@@ -27,17 +27,23 @@ public class Config {
         int bootMode = 0;
 
         // 原始proto文件路径
-        String inputFilePath = "proto_test/input/test.proto";
+        String inputFilePath = "proto/input/all_in_one.proto";
         // 映射文件路径
-        String replaceMappingFilePath = "proto_test/input/mapping.tsv";
+        String replaceMappingFilePath = "proto/input/mapping.tsv";
         // 替换字段后 proto 文件输出路径
-        String replaceOutputDirectory = "proto_test/all_in_one_proto_output";
+        String replaceOutputDirectory = "proto/all_in_one_proto_output";
         // 输出proto文件路径
-        String splitOutputDirectory = "proto_test/dispersible_proto_output";
+        String splitOutputDirectory = "proto/dispersible_proto_output";
         // 定义文件头部内容 注意转义
         String[] headerContent = {"option java_package = \"emu.grasscutter.net.proto\";"};
         // 输出文件前永远清理输出文件夹所有内容
         boolean clearOutputFolderForever = true;
+
+        // 是否生成 PacketOpcodes (gc用)
+        boolean createPacketOpcodes = true;
+        String packetHeader = "package emu.grasscutter.net.packet;";
+        // PacketOpcodes.java 生成路径
+        String opsOutputFilePath = "proto/packet_opcodes_output/PacketOpcodes.java";
     }
 
     /**
