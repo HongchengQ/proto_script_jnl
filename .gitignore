@@ -16,3 +16,4 @@ proto_test
 script-1.0-SNAPSHOT.jar
 .idea
 logs
+config.json
