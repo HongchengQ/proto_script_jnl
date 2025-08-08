@@ -1,4 +1,4 @@
-package cn.hongchengq;
+package cn.hongchengq.proto_script_jnl;
 
 import java.io.IOException;
 import java.nio.file.Files;

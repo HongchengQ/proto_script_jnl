@@ -1,4 +1,4 @@
-package cn.hongchengq;
+package cn.hongchengq.proto_script_jnl;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.csv.CSVFormat;

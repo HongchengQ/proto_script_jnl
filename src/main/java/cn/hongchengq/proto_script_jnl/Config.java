@@ -1,4 +1,4 @@
-package cn.hongchengq;
+package cn.hongchengq.proto_script_jnl;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.json.JsonReadFeature;

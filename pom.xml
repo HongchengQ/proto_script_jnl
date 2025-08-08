@@ -5,8 +5,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>cn.hongchengq</groupId>
-    <artifactId>script</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <artifactId>proto_script_jnl</artifactId>
+    <version>pm</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>

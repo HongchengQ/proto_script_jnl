@@ -1,4 +1,4 @@
-package cn.hongchengq;
+package cn.hongchengq.proto_script_jnl;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
