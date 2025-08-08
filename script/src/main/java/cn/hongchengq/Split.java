@@ -57,6 +57,18 @@ public class Split {
                     .distinct()
                     .toList();
 
+            String fileName = "PacketOpcodes.java";
+            try(var opwriter = Files.newBufferedWriter(Paths.get(fileName))) {
+                if (Config.getConfig().createPacketOpcodes) {
+                    opwriter.write(Config.getConfig().packetHeader + "\n");
+                    opwriter.newLine();
+                    opwriter.write("public final class PacketOpcodes {\n");
+                    for (var message : topFloorMessages){
+                        opwriter.write("    public static final int " + message.name + "= " + message.cmdId + ";\n");
+                    }
+                    opwriter.write("}\n");
+                }
+            }
             // 遍历每个顶层 message
             for (topFloorMessagesMetadata topFloorMessage : topFloorMessages) {
                 for (String s : topFloorMessage.extraNestedMessagesName) {

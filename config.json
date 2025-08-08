@@ -21,5 +21,7 @@
   // 定义文件头部内容 注意转义
   "headerContent": ["option java_package = \"emu.grasscutter.net.proto\";"],
   // 输出文件前永远清理输出文件夹所有内容
-  "clearOutputFolderForever": true
+  "clearOutputFolderForever": true,
+  // 是否生成PacketOPacketOpcodes(gc用)
+  "createPacketOpcodes" : true
 }
