@@ -18,8 +18,7 @@ public class Config {
         // proto对应游戏版本 标记用
         String gameVersion = "1.0.0";
 
-        // todo
-        // 启动模式 四种
+        // todo 启动模式 四种
         // 0：分割(将一个大proto根据message分割为各个单独的文件)
         // 1：分割(将一个大proto根据先前定义的类型分割为几个文件)
         // 10：合并(根据message分割的文件合并为一个大proto)
@@ -39,12 +38,22 @@ public class Config {
         // 输出文件前永远清理输出文件夹所有内容
         boolean clearOutputFolderForever = true;
 
-        // 是否生成 PacketOpcodes (gc用)
-        boolean createPacketOpcodes = true;
-        String packetHeader = "package emu.grasscutter.net.packet;";
-        // PacketOpcodes.java 生成路径
-        String opsOutputDirectory = "proto/packet_opcodes_output";
+        private PacketOpcodesOptional packetOpcodesOptional;
+        @Data public static class PacketOpcodesOptional {
+            // 是否生成 PacketOpcodes (gc用)
+            private boolean createPacketOpcodes = true;
+            private String packetHeader = "package emu.grasscutter.net.packet;";
+            // PacketOpcodes.java 生成路径
+            private String opsOutputDirectory = "proto/packet_opcodes_output";
+        }
+
+        private GenerateMessageBlacklistOptional generateMessageBlacklistOptional;
+        @Data public static class GenerateMessageBlacklistOptional {
+            private boolean enableBlacklist = true;
+            private String blacklistFilePath = "proto/input/messageBlacklist.json";
+        }
     }
+
 
     /**
      * 初始化方法 加载config
@@ -55,6 +64,9 @@ public class Config {
                 .configure(JsonReadFeature.ALLOW_TRAILING_COMMA, true)// 配置特性
                 .build();
         JsonMapper jsonMapper = new JsonMapper(jsonFactory);
+
+        // 配置忽略未知字段
+//        jsonMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
         File file = new File("config.json");
 

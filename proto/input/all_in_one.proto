@@ -46,6 +46,7 @@ message AGEJKCAHCMI {
 }
 
 
+// CmdId: 111
 message test_one {
     enum iooo {
         ada = 0;
@@ -55,6 +56,7 @@ message test_one {
     uint32 awdad = 8;
 }
 
+// CmdId: 666
 message test_two {
     map<uint32, AGEJKCAHCMI> settle_show = 11;
     repeated OCDKPMNAPBA adadww = 8888;

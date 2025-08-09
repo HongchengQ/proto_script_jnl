@@ -15,11 +15,12 @@ import java.util.regex.Pattern;
 @Slf4j
 public class Split {
     // 存储路径
-    static String inputProtoFilePath = Config.getConfig().replaceOutputDirectory;
     static String outputProtoDirectory = Config.getConfig().splitOutputDirectory;
 
     // 顶层 message
-    static List<topFloorMessagesMetadata> topFloorMessages = new ArrayList<>();
+    static List<topFloorMessagesData> topFloorMessages = new ArrayList<>();
+    // 顶层 message 输出黑名单 - 这里面的 messageName 都不会输出
+    static List<String> topMessageBlackList;
 
     // 存储所有文件头部基本信息 - syntax、package、import等 (是根据大proto复制来的)
     static List<String> headerLines = new ArrayList<>();
@@ -33,13 +34,12 @@ public class Split {
             log.error("由于传入路径为空 不继续对文件分割");
             return;
         }
-        inputProtoFilePath = replaceFilePath;
 
         try {
             // 确保输出目录存在
             Files.createDirectories(Paths.get(outputProtoDirectory));
 
-            if (Config.getConfig().isClearOutputFolderForever()) {
+            if (Config.getConfig().clearOutputFolderForever) {
                 // 删除输出目录下的所有内容
                 Tools.deleteDirectoryContents((Paths.get(outputProtoDirectory)));
             }
@@ -47,7 +47,7 @@ public class Split {
             headerLines.add("// Game Version: " + Config.getConfig().gameVersion + "\n");
 
             // 解析 proto 文件的每一行
-            parseProtoFileLines();
+            parseProtoFileLines(replaceFilePath);
 
             // 自定义文件头部内容添加进 headerLines
             headerLines.addAll(Arrays.asList(Config.getConfig().headerContent));
@@ -58,8 +58,17 @@ public class Split {
                     .distinct()
                     .toList();
 
+            // proto 输出黑名单
+            topMessageBlackList = parseMessageBlackListFileLines();
+
             // 遍历每个顶层 message 进行数据清理和创建 proto
-            for (topFloorMessagesMetadata topFloorMessage : topFloorMessages) {
+            for (topFloorMessagesData topFloorMessage : topFloorMessages) {
+
+                // 检测是否在黑名单
+                if (topMessageBlackList.contains(topFloorMessage.name) ||
+                        topMessageBlackList.contains(String.valueOf(topFloorMessage.cmdId))
+                ) continue;
+
                 // 清除被嵌套进message的message
                 for (String name : topFloorMessage.extraNestedMessagesName) {
                     topFloorMessage.needImportMessage.remove(name);
@@ -82,24 +91,24 @@ public class Split {
             log.info("Proto文件分割完成，共生成 {} 个文件，输出目录: {}", topFloorMessages.size(), outputProtoDirectory);
 
             // 创建 PacketOpcodes.java
-            if (Config.getConfig().createPacketOpcodes) {
-                Path OpFileDirectory = Paths.get(Config.getConfig().opsOutputDirectory);
+            if (Config.getConfig().getPacketOpcodesOptional().isCreatePacketOpcodes()) {
+                Path OpFileDirectory = Paths.get(Config.getConfig().getPacketOpcodesOptional().getOpsOutputDirectory());
                 Path OpFilePath = Paths.get(OpFileDirectory + "/PacketOpcodes.java");
 
                 // 确保输出目录存在
                 Files.createDirectories(OpFileDirectory);
 
-                if (Config.getConfig().isClearOutputFolderForever()) {
+                if (Config.getConfig().clearOutputFolderForever) {
                     // 删除输出目录下的所有内容
                     Tools.deleteDirectoryContents(OpFileDirectory);
                 }
 
                 try (BufferedWriter OpWriter = Files.newBufferedWriter(OpFilePath)) {
-                    OpWriter.write(Config.getConfig().packetHeader + "\n");
+                    OpWriter.write(Config.getConfig().getPacketOpcodesOptional().getPacketHeader() + "\n");
                     OpWriter.newLine();
                     OpWriter.write("public final class PacketOpcodes {\n");
                     for (var message : topFloorMessages) {
-                        OpWriter.write("    public static final int " + message.name + "= " + message.cmdId + ";\n");
+                        OpWriter.write("    public static final int " + message.name + " = " + message.cmdId + ";\n");
                     }
                     OpWriter.write("}\n");
                 }
@@ -111,9 +120,22 @@ public class Split {
     }
 
     /**
+     * 解析 message 输出黑名单文件的每一行
+     * @return 需要黑名单的 list (name/cmdId)
+     */
+    public static List<String> parseMessageBlackListFileLines() {
+        Config.ConfigBean.GenerateMessageBlacklistOptional configOptional = Config.getConfig()
+                .getGenerateMessageBlacklistOptional();
+
+        if (!configOptional.isEnableBlacklist()) return Collections.singletonList("null");
+
+        return Tools.getJsonTrueKeys(configOptional.getBlacklistFilePath());
+    }
+
+    /**
      * 解析 proto 文件的每一行
      */
-    public static void parseProtoFileLines() throws IOException {
+    public static void parseProtoFileLines(String inputProtoFilePath) throws IOException {
         List<String> lines = Files.readAllLines(Paths.get(inputProtoFilePath));
 
         // message嵌套深度: 当行内出现可以嵌套或被嵌套的类型时 +1, 匹配到 "}" 符号时 -1, 归零时生成一个新的message
@@ -151,7 +173,7 @@ public class Split {
                         // 没有message嵌套余量时 代表已经进入下一个message了
                         if (messageNestingAllowance == 0) {
                             // 这时可以构建 newMessage
-                            topFloorMessagesMetadata newMessage = new topFloorMessagesMetadata();
+                            topFloorMessagesData newMessage = new topFloorMessagesData();
                             newMessage.name = messageName;
                             newMessage.cmdId = lastCmdId;
                             // 向 messages 添加 newMessage
@@ -302,7 +324,7 @@ public class Split {
         return null;
     }
 
-    private static void createProtoFile(topFloorMessagesMetadata proto) {
+    private static void createProtoFile(topFloorMessagesData proto) {
         String fileName = outputProtoDirectory + File.separator + proto.name + ".proto";
 
         try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(fileName))) {
@@ -351,10 +373,10 @@ public class Split {
     }
 
     /**
-     * proto 输出信息元数据
+     * proto 输出信息数据
      * 这里的数据将写入输出文件
      */
-    private static class topFloorMessagesMetadata {
+    private static class topFloorMessagesData {
         String name;                                                                // 输出文件名
         int cmdId = 0;                                                              // CmdId
         List<String> lines = new ArrayList<>();                                     // 自身包含的行

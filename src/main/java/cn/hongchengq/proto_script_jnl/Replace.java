@@ -113,7 +113,7 @@ public class Replace {
             // 确保输出目录存在
             Files.createDirectories(outputPathDir);
 
-            if (Config.getConfig().isClearOutputFolderForever()) {
+            if (Config.getConfig().clearOutputFolderForever) {
                 // 删除输出目录下的所有内容
                 Tools.deleteDirectoryContents(outputPathDir);
             }

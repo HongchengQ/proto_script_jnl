@@ -1,9 +1,19 @@
 package cn.hongchengq.proto_script_jnl;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
+
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
+@Slf4j
 public class Tools {
     /**
      * 删除目录中的所有内容，保留目录本身
@@ -25,4 +35,26 @@ public class Tools {
         }
     }
 
+    public static List<String> getJsonTrueKeys(String filePath) {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode rootNode;
+
+        try {
+            rootNode = mapper.readTree(new File(filePath));
+        } catch (IOException e) {
+            log.error("parse {} error", filePath, e);
+            return null;
+        }
+
+        List<String> trueKeys = new ArrayList<>();
+        Iterator<Map.Entry<String, JsonNode>> fieldIterator = rootNode.properties().iterator();
+
+        fieldIterator.forEachRemaining(entry -> {
+            if (entry.getValue().asBoolean()) {
+                trueKeys.add(entry.getKey());
+            }
+        });
+
+        return trueKeys;
+    }
 }
