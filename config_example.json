@@ -18,9 +18,17 @@
   "headerContent": ["option java_package = \"emu.grasscutter.net.proto\";"],
   // 输出文件前永远清理输出文件夹所有内容
   "clearOutputFolderForever": true,
-  // 是否生成PacketOPacketOpcodes(gc用)
-  "createPacketOpcodes" : true,
-  "packetHeader": "package emu.grasscutter.net.packet;",
-  // PacketOpcodes.java 生成路径
-  "opsOutputDirectory": "proto/packet_opcodes_output",
+
+  "packetOpcodesOptional": {
+    // 是否生成PacketOPacketOpcodes(gc用)
+    "createPacketOpcodes" : true,
+    "packetHeader": "package emu.grasscutter.net.packet;",
+    // PacketOpcodes.java 生成路径
+    "opsOutputDirectory": "proto/packet_opcodes_output"
+  },
+
+  "generateMessageBlacklistOptional": {
+    "enableBlacklist": true,
+    "blacklistFilePath": "proto/input/messageBlacklist.json"
+  }
 }
