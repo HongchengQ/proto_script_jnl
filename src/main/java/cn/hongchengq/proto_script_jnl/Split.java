@@ -107,7 +107,10 @@ public class Split {
                     OpWriter.write(Config.getConfig().getPacketOpcodesOptional().getPacketHeader() + "\n");
                     OpWriter.newLine();
                     OpWriter.write("public final class PacketOpcodes {\n");
-                    for (var message : topFloorMessages) {
+                    for (topFloorMessagesData message : topFloorMessages) {
+                        if (message.cmdId == 0) {
+                            continue;
+                        }
                         OpWriter.write("    public static final int " + message.name + " = " + message.cmdId + ";\n");
                     }
                     OpWriter.write("}\n");
