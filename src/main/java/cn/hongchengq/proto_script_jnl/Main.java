@@ -13,7 +13,7 @@ public class Main {
 
         // 获取当前时间
         LocalDateTime dateTime = LocalDateTime.now();
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-dd-MM HH:mm:ss");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         usedTime = dateTime.format(formatter);
 
         // 字段替换
