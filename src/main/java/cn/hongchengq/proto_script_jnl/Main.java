@@ -1,5 +1,7 @@
 package cn.hongchengq.proto_script_jnl;
 
+import cn.hongchengq.proto_script_jnl.revert.RevertMapping;
+
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -21,5 +23,8 @@ public class Main {
 
         // 分割文件
         Split.start(path);
+
+        // test
+//        RevertMapping.main(null);
     }
 }

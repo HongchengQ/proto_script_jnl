@@ -35,10 +35,17 @@ public class Tools {
         }
     }
 
+    /**
+     * 从指定JSON文件中读取所有值为true的键名
+     *
+     * @param filePath JSON文件的路径
+     * @return 包含所有值为true的键名的列表，如果解析失败则返回null
+     */
     public static List<String> getJsonTrueKeys(String filePath) {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode rootNode;
 
+        // 读取并解析JSON文件
         try {
             rootNode = mapper.readTree(new File(filePath));
         } catch (IOException e) {
@@ -49,6 +56,7 @@ public class Tools {
         List<String> trueKeys = new ArrayList<>();
         Iterator<Map.Entry<String, JsonNode>> fieldIterator = rootNode.properties().iterator();
 
+        // 遍历JSON对象的所有属性，筛选出值为true的键
         fieldIterator.forEachRemaining(entry -> {
             if (entry.getValue().asBoolean()) {
                 trueKeys.add(entry.getKey());
@@ -57,4 +65,5 @@ public class Tools {
 
         return trueKeys;
     }
+
 }
