@@ -464,10 +464,22 @@ public class Split {
             // 写入目标消息定义
             for (String messageLine : proto.lines) {
                 if (proto.cmdId != 0 && isWriteToTopOfMessage && !isWriteToTopOfCmdId) {
+                    // 后面要使用的数字 判断是否需要加入 allow_alias 用
+                    List<Integer> writeTheNumbers = new ArrayList<>();
+                    writeTheNumbers.add(0);
+                    writeTheNumbers.add(proto.cmdId);
+                    if (!proto.filedMagicNumberMap.isEmpty())
+                        writeTheNumbers.add(1);
+
                     writer.write("\tenum CmdId {\n");
-//                    writer.write("\toption allow_alias = true;\n");
+                    if (Tools.hasDuplicates(writeTheNumbers)) {
+                        // enum 有重复项
+                        writer.write("\t\toption allow_alias = true;\n");
+                    }
                     writer.write("\t\tNONE = 0;\n");
                     writer.write("\t\tCMD_ID = " + proto.cmdId + ";\n");
+                    if (!proto.filedMagicNumberMap.isEmpty())
+                        writer.write("\t\tIS_XOR_VALUE_FIELDS = " + 1 + ";\n");
                     writer.write("\t}");
                     writer.newLine();
                     isWriteToTopOfCmdId = true;

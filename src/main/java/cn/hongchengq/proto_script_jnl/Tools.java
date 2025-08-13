@@ -8,10 +8,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Slf4j
 public class Tools {
@@ -64,6 +61,14 @@ public class Tools {
         });
 
         return trueKeys;
+    }
+
+    /**
+     * 判断 list 是否有重复项
+     */
+    public static boolean hasDuplicates(List<Integer> list) {
+        Set<Integer> set = new HashSet<>(list);
+        return set.size() < list.size();
     }
 
 }
