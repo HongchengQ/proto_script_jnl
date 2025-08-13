@@ -53,7 +53,7 @@ message test_one {
         adadf = 1;
     }
 
-    uint32 awdad = 8;
+    uint32 awdad = 8; // CUSTOM_ENCRYPT: (VALUE ^ 0X88AA) - 60361 / (VALUE + 60361) ^ 0X88AA
 }
 
 // CmdId: 666

@@ -18,7 +18,7 @@ public class Split {
     static String outputProtoDirectory = Config.getConfig().splitOutputDirectory;
 
     // 顶层 message
-    static List<topFloorMessagesData> topFloorMessages = new ArrayList<>();
+    static List<TopFloorMessagesData> topFloorMessages = new ArrayList<>();
     // 顶层 message 输出黑名单 - 这里面的 messageName 都不会输出
     static List<String> topMessageBlackList;
 
@@ -62,7 +62,7 @@ public class Split {
             topMessageBlackList = parseMessageBlackListFileLines();
 
             // 遍历每个顶层 message 进行数据清理和创建 proto
-            for (topFloorMessagesData topFloorMessage : topFloorMessages) {
+            for (TopFloorMessagesData topFloorMessage : topFloorMessages) {
 
                 // 检测是否在黑名单
                 if (topMessageBlackList.contains(topFloorMessage.name) ||
@@ -107,7 +107,7 @@ public class Split {
                     OpWriter.write(Config.getConfig().getPacketOpcodesOptional().getPacketHeader() + "\n");
                     OpWriter.newLine();
                     OpWriter.write("public final class PacketOpcodes {\n");
-                    for (topFloorMessagesData message : topFloorMessages) {
+                    for (TopFloorMessagesData message : topFloorMessages) {
                         if (message.cmdId == 0) {
                             continue;
                         }
@@ -116,6 +116,36 @@ public class Split {
                     OpWriter.write("}\n");
                 }
                 log.info("{} 已生成完毕", OpFilePath);
+            }
+
+            // create XorFieldConfig
+            if (Config.getConfig().getGenerateXorFieldConfig().isEnableGenerateXorFieldConfig()) {
+                Path fileDir = Paths.get(Config.getConfig().getGenerateXorFieldConfig().getXorOutputDirectory());
+                Path FilePath = Paths.get(fileDir + "/XorFieldConfig.tsv");
+
+                // 确保输出目录存在
+                Files.createDirectories(fileDir);
+
+                if (Config.getConfig().clearOutputFolderForever) {
+                    // 删除输出目录下的所有内容
+                    Tools.deleteDirectoryContents(fileDir);
+                }
+
+                try (BufferedWriter Writer = Files.newBufferedWriter(FilePath)) {
+                    Writer.write("CmdId\tMessageName\tFiledId\tMagicNumber1\tMagicNumber2\tMagicNumberOperatorMode");
+                    Writer.newLine();
+                    for (TopFloorMessagesData message : topFloorMessages) {
+                        if (message.filedMagicNumberMap == null || message.filedMagicNumberMap.isEmpty()) {
+                            continue;
+                        }
+                        for (TopFloorMessagesData.FiledMagicNumberMap map : message.filedMagicNumberMap) {
+                            Writer.write(message.cmdId + "\t" + message.name + "\t" + map.filedId + "\t" +
+                                    map.magicNumber1 + "\t" + map.magicNumber2 + "\t" + map.mode);
+                            Writer.newLine();
+                        }
+                    }
+                }
+                log.info("{} 已生成完毕", FilePath);
             }
         } catch (IOException e) {
             log.error(String.valueOf(e));
@@ -176,7 +206,7 @@ public class Split {
                         // 没有message嵌套余量时 代表已经进入下一个message了
                         if (messageNestingAllowance == 0) {
                             // 这时可以构建 newMessage
-                            topFloorMessagesData newMessage = new topFloorMessagesData();
+                            TopFloorMessagesData newMessage = new TopFloorMessagesData();
                             newMessage.name = messageName;
                             newMessage.cmdId = lastCmdId;
                             // 向 messages 添加 newMessage
@@ -192,6 +222,12 @@ public class Split {
                     isNestingTypeLine = true;
                     break;
                 }
+            }
+
+            // 分析xor字段
+            TopFloorMessagesData.FiledMagicNumberMap xorMap = extractFiledMagicNumber(line);
+            if (xorMap != null && topFloorMessages != null && !topFloorMessages.isEmpty()) {
+                topFloorMessages.getLast().filedMagicNumberMap.add(xorMap);
             }
 
             int fieldTypeMaxCount = ConstProtoType.getSimpleType().size();
@@ -327,7 +363,77 @@ public class Split {
         return null;
     }
 
-    private static void createProtoFile(topFloorMessagesData proto) {
+    enum MagicNumberOperatorMode {
+        none,
+        xorAndAdder,        // 先xor再加
+        xorAndSubtract,     // 先xor再减
+        adderAndXor,        // 先加再xor
+        subtractAndXor      // 先减再xor
+    }
+
+    /**
+     * 提取 CUSTOM_ENCRYPT 后面的两个魔数 以及 filedId
+     */
+    private static TopFloorMessagesData.FiledMagicNumberMap extractFiledMagicNumber(String line) {
+        TopFloorMessagesData.FiledMagicNumberMap map = new TopFloorMessagesData.FiledMagicNumberMap();
+
+        // 匹配模式，处理 ^ + - 符号的任意顺序组合
+        Pattern pattern = Pattern.compile(
+                "=\\s*(\\d+)\\s*;.*CUSTOM_ENCRYPT:\\s*\\(VALUE\\s*([+\\-^])\\s*(0[Xx][0-9A-Fa-f]+|\\d+)\\)\\s*([+\\-^/])\\s*(0[Xx][0-9A-Fa-f]+|\\d+)"
+        );
+
+        Matcher matcher = pattern.matcher(line.trim());
+
+        if (matcher.find()) {
+            try {
+                // 提取字段ID
+                int fieldId = Integer.parseInt(matcher.group(1));
+
+                // 提取操作符和操作数
+                String operator1 = matcher.group(2);  // 第一个操作符 (^, +, -)
+                String operand1 = matcher.group(3);   // 第一个操作数 (可能是0X格式或数字)
+                String operator2 = matcher.group(4);  // 第二个操作符 (^, +, -)
+                String operand2 = matcher.group(5);   // 第二个操作数 (可能是0X格式或数字)
+
+                if (fieldId == 0 || operator1 == null || operand1 == null ||
+                        operator2 == null || operand2 == null
+                ) {
+                    log.error("提取xor字段魔数时发生错误，关键字段为0或null");
+                    return null;
+                }
+
+                map.filedId = fieldId;
+                map.magicNumber1 = operand1.toUpperCase();
+                map.magicNumber2 = operand2.toUpperCase();
+
+                // 根据运算符确定模式
+                if (operator1.equals("^") && operator2.equals("+")) {
+                    map.mode = MagicNumberOperatorMode.xorAndAdder;
+                } else if (operator1.equals("^") && operator2.equals("-")) {
+                    map.mode = MagicNumberOperatorMode.xorAndSubtract;
+                } else if (operator1.equals("+") && operator2.equals("^")) {
+                    map.mode = MagicNumberOperatorMode.adderAndXor;
+                } else if (operator1.equals("-") && operator2.equals("^")) {
+                    map.mode = MagicNumberOperatorMode.subtractAndXor;
+                } else {
+                    // 未知模式
+                    log.error("提取xor字段魔数时发生错误，未知模式");
+                    map.mode = MagicNumberOperatorMode.none;
+                }
+
+            } catch (NumberFormatException e) {
+                log.error("提取xor字段魔数时发生错误，未知错误");
+                // 解析数字失败时返回空Map
+                return null;
+            }
+        } else {
+            return null;
+        }
+
+        return map;
+    }
+
+    private static void createProtoFile(TopFloorMessagesData proto) {
         String fileName = outputProtoDirectory + File.separator + proto.name + ".proto";
 
         try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(fileName))) {
@@ -379,13 +485,19 @@ public class Split {
      * proto 输出信息数据
      * 这里的数据将写入输出文件
      */
-    private static class topFloorMessagesData {
+    private static class TopFloorMessagesData {
         String name;                                                                // 输出文件名
         int cmdId = 0;                                                              // CmdId
         List<String> lines = new ArrayList<>();                                     // 自身包含的行
         List<String> needImportMessage = new ArrayList<>();                         // 需要import的message
         List<String> extraNestedMessagesName = new ArrayList<>();                   // 自身额外嵌套类的name
 //        List<topFloorMessagesMetadata> extraNestedMessages = new ArrayList<>();     // 自身额外嵌套类 暂时用不到
+        List<FiledMagicNumberMap> filedMagicNumberMap = new ArrayList<>();
+        static class FiledMagicNumberMap {
+            int filedId;
+            String magicNumber1;
+            String magicNumber2;
+            MagicNumberOperatorMode mode;
+        }
     }
-
 }

@@ -1,6 +1,6 @@
 {
   // proto对应游戏版本 标记用
-  "gameVersion": "1.0.0",
+  "gameVersion": "2.0.0",
 
   // todo
   // 启动模式
@@ -30,5 +30,9 @@
   "generateMessageBlacklistOptional": {
     "enableBlacklist": true,
     "blacklistFilePath": "proto/input/messageBlacklist.json"
+  },
+  "generateXorFieldConfig": {
+    "enableGenerateXorFieldConfig": true,
+    "xorOutputDirectory": "proto/xor_field_config_output"
   }
 }

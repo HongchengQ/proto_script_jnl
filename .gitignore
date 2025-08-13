@@ -13,6 +13,8 @@ buildNumber.properties
 
 proto
 proto_test
+proto_live
+proto_beta
 script-1.0-SNAPSHOT.jar
 .idea
 logs

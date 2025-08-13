@@ -52,6 +52,12 @@ public class Config {
             private boolean enableBlacklist = true;
             private String blacklistFilePath = "proto/input/messageBlacklist.json";
         }
+
+        private GenerateXorFieldConfig generateXorFieldConfig;
+        @Data public static class GenerateXorFieldConfig {
+            private boolean enableGenerateXorFieldConfig = true;
+            private String xorOutputDirectory = "proto/xor_field_config_output";
+        }
     }
 
 
